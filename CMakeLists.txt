@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.11) # FetchContent is available in 3.11+
-project(raylib-example)
+project(main)
 
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -24,12 +24,36 @@ endif()
 
 # Our Project
 
-add_executable(${PROJECT_NAME} main.c)
+if ("${PLATFORM}" STREQUAL "Web")
+    set(EMSCRIPTEN TRUE)
+else()
+    set(EMSCRIPTEN FALSE)
+endif()
+
+set(C_SOURCES_DIR "src")
+
+set(C_HEADERS_DIR "include")
+
+file(
+    GLOB_RECURSE SourceFiles
+    "${C_SOURCES_DIR}/*.c"
+)
+
+add_executable(${PROJECT_NAME} ${SourceFiles})
 #set(raylib_VERBOSE 1)
 target_link_libraries(${PROJECT_NAME} raylib -lm)
 
+if (EXISTS "${CMAKE_SOURCE_DIR}/${C_HEADERS_DIR}" AND IS_DIRECTORY "${CMAKE_SOURCE_DIR}/${C_HEADERS_DIR}")
+    include_directories("${CMAKE_SOURCE_DIR}/${C_HEADERS_DIR}")
+endif (EXISTS "${CMAKE_SOURCE_DIR}/${C_HEADERS_DIR}" AND IS_DIRECTORY "${CMAKE_SOURCE_DIR}/${C_HEADERS_DIR}")
+
+if (NOT EMSCRIPTEN AND EXISTS "${CMAKE_SOURCE_DIR}/assets" AND IS_DIRECTORY "${CMAKE_SOURCE_DIR}/assets")
+    file(COPY "${CMAKE_SOURCE_DIR}/assets" DESTINATION "${PROJECT_BINARY_DIR}/bin")
+endif (NOT EMSCRIPTEN AND EXISTS "${CMAKE_SOURCE_DIR}/assets" AND IS_DIRECTORY "${CMAKE_SOURCE_DIR}/assets")
+
 # Web Configurations
-if ("${PLATFORM}" STREQUAL "Web")
+if (EMSCRIPTEN)
+    set(ASSETS "${CMAKE_SOURCE_DIR}/assets")
     # Tell Emscripten to build an example.html file.
     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 endif()
